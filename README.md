@@ -718,8 +718,15 @@ For production data contracts:
 schema = ar.Schema({
     "id": ar.Int64(nullable=False, unique=True),
     "email": ar.Email(nullable=False),
-    # CountryCode expects uppercase ISO alpha-2 values, for example IN, US, GB.
-    "country": ar.CountryCode(nullable=False),
+
+    "user_type": ar.String(nullable=False),
+
+    # country becomes required when user_type == "international"
+    "country": ar.String(
+        nullable=True,
+        required_if=("user_type", "international"),
+    ),
+
     "username": ar.String(min_length=3, max_length=20),
     "user_code": ar.Regex(r"^USR-\d{4}$", nullable=False),
     "revenue": ar.Float64(nullable=True, min=0),
@@ -729,6 +736,7 @@ schema = ar.Schema({
 
 
 result = ar.validate(frame, schema)
+
 if not result.passed:
     summary = result.summary()
     print(summary["issues_by_rule"])
@@ -737,6 +745,9 @@ if not result.passed:
     print(result.to_pandas())
     print(result.to_markdown(max_issues=10))
 ```
+
+In this example, `country` becomes required only when
+`user_type == "international"`.
 
 Date validates strict YYYY-MM-DD calendar dates.
 
