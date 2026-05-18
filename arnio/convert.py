@@ -243,6 +243,17 @@ def from_pandas(df: pd.DataFrame) -> ArFrame:
     >>> df = pd.DataFrame({"name": ["Alice"], "age": [25]})
     >>> frame = ar.from_pandas(df)
     """
+    seen: set[object] = set()
+    dupes: list[object] = []
+    for label in df.columns:
+        if label in seen and label not in dupes:
+            dupes.append(label)
+        seen.add(label)
+    if dupes:
+        raise ValueError(
+            f"from_pandas() does not support duplicate column labels: {[repr(label) for label in dupes]}"
+        )
+
     columns = {}
     dtype_hints = {}
 
