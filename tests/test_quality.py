@@ -2677,3 +2677,13 @@ def test_quality_gate_result_to_json_invalid_output_raises():
     result = ar.check_quality_gates(p, p)
     with pytest.raises(TypeError, match="writable text stream"):
         result.to_json(output=123)
+
+
+def test_compare_profiles_mismatched_exclude_columns_hints_user():
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+    frame = ar.from_pandas(df)
+    profile_a = ar.profile(frame, exclude_columns=["c"])
+    profile_b = ar.profile(frame)
+
+    with pytest.raises(ValueError, match="exclude_columns"):
+        ar.compare_profiles(profile_a, profile_b)
