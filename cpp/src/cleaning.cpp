@@ -119,8 +119,7 @@ static std::string row_key(const Frame& frame, size_t row, const std::vector<siz
 
 // --- Fast typed hashing for drop_duplicates ---
 // FNV-1a 64-bit hash over raw bytes.  No heap allocation.
-static uint64_t fnv1a(const char* data, size_t len,
-                      uint64_t h = 14695981039346656037ULL) noexcept {
+static uint64_t fnv1a(const char* data, size_t len, uint64_t h = 14695981039346656037ULL) noexcept {
     for (size_t i = 0; i < len; ++i) {
         h ^= static_cast<uint8_t>(data[i]);
         h *= 1099511628211ULL;
@@ -131,8 +130,7 @@ static uint64_t fnv1a(const char* data, size_t len,
 // Hash a single CellValue directly from its typed storage — zero heap allocation.
 // Each variant uses a distinct seed so INT64(1) != STRING("1") != BOOL(true) != NULL.
 static uint64_t hash_cell(const CellValue& cell) noexcept {
-    if (std::holds_alternative<std::monostate>(cell))
-        return 14695981039346656037ULL ^ 0x00ULL;
+    if (std::holds_alternative<std::monostate>(cell)) return 14695981039346656037ULL ^ 0x00ULL;
     if (std::holds_alternative<int64_t>(cell)) {
         int64_t v = std::get<int64_t>(cell);
         return fnv1a(reinterpret_cast<const char*>(&v), sizeof(v),
@@ -155,8 +153,7 @@ static uint64_t hash_cell(const CellValue& cell) noexcept {
 // Combine per-column hashes into a single 64-bit row hash.
 // FNV multiply-xor chaining makes column order significant so
 // row(A,B) != row(B,A) for distinct A and B.
-static uint64_t hash_row(const Frame& frame, size_t row,
-                         const std::vector<size_t>& cols) noexcept {
+static uint64_t hash_row(const Frame& frame, size_t row, const std::vector<size_t>& cols) noexcept {
     uint64_t h = 14695981039346656037ULL;
     for (size_t ci : cols) {
         h ^= hash_cell(frame.column(ci).at(row));
@@ -334,8 +331,7 @@ Frame drop_duplicates(const Frame& frame, const std::optional<std::vector<std::s
     if (keep == "first") {
         // bucket: vector of (row_key, first_row_index)
         // row_key string is empty until the bucket's first hash hit forces it.
-        std::unordered_map<uint64_t,
-                           std::vector<std::pair<std::string, size_t>>> seen;
+        std::unordered_map<uint64_t, std::vector<std::pair<std::string, size_t>>> seen;
         seen.reserve(frame.num_rows());
         std::vector<size_t> keep_rows;
 
@@ -372,8 +368,7 @@ Frame drop_duplicates(const Frame& frame, const std::optional<std::vector<std::s
 
     } else if (keep == "last") {
         // bucket: vector of (row_key, last_row_index)
-        std::unordered_map<uint64_t,
-                           std::vector<std::pair<std::string, size_t>>> last_seen;
+        std::unordered_map<uint64_t, std::vector<std::pair<std::string, size_t>>> last_seen;
         last_seen.reserve(frame.num_rows());
 
         for (size_t r = 0; r < frame.num_rows(); ++r) {
@@ -413,8 +408,8 @@ Frame drop_duplicates(const Frame& frame, const std::optional<std::vector<std::s
 
     } else if (keep == "none") {
         // bucket: vector of (row_key, vector_of_row_indices)
-        std::unordered_map<uint64_t,
-                           std::vector<std::pair<std::string, std::vector<size_t>>>> groups;
+        std::unordered_map<uint64_t, std::vector<std::pair<std::string, std::vector<size_t>>>>
+            groups;
         groups.reserve(frame.num_rows());
 
         for (size_t r = 0; r < frame.num_rows(); ++r) {
@@ -422,7 +417,7 @@ Frame drop_duplicates(const Frame& frame, const std::optional<std::vector<std::s
             auto it = groups.find(h);
             if (it == groups.end()) {
                 groups.emplace(h, std::vector<std::pair<std::string, std::vector<size_t>>>{
-                    {"", std::vector<size_t>{r}}});
+                                      {"", std::vector<size_t>{r}}});
             } else {
                 std::string cur = row_key(frame, r, col_indices);
                 auto& bucket = it->second;

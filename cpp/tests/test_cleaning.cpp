@@ -122,7 +122,7 @@ TEST_CASE("drop_duplicates deduplicates int column keep=first", "[cleaning][dedu
     Column c("x", DType::INT64);
     c.push_back(int64_t(1));
     c.push_back(int64_t(2));
-    c.push_back(int64_t(1));   // duplicate of row 0
+    c.push_back(int64_t(1));  // duplicate of row 0
     c.push_back(int64_t(3));
     Frame f;
     f.add_column(std::move(c));
@@ -138,7 +138,7 @@ TEST_CASE("drop_duplicates deduplicates int column keep=last", "[cleaning][dedup
     Column c("x", DType::INT64);
     c.push_back(int64_t(1));
     c.push_back(int64_t(2));
-    c.push_back(int64_t(1));   // duplicate — last occurrence wins
+    c.push_back(int64_t(1));  // duplicate — last occurrence wins
     Frame f;
     f.add_column(std::move(c));
 
@@ -152,7 +152,7 @@ TEST_CASE("drop_duplicates deduplicates int column keep=none", "[cleaning][dedup
     Column c("x", DType::INT64);
     c.push_back(int64_t(1));
     c.push_back(int64_t(2));
-    c.push_back(int64_t(1));   // duplicate — both rows dropped
+    c.push_back(int64_t(1));  // duplicate — both rows dropped
     c.push_back(int64_t(3));
     Frame f;
     f.add_column(std::move(c));
@@ -167,7 +167,7 @@ TEST_CASE("drop_duplicates deduplicates float column", "[cleaning][dedup]") {
     Column c("v", DType::FLOAT64);
     c.push_back(double(1.5));
     c.push_back(double(2.5));
-    c.push_back(double(1.5));   // duplicate
+    c.push_back(double(1.5));  // duplicate
     Frame f;
     f.add_column(std::move(c));
 
@@ -181,7 +181,7 @@ TEST_CASE("drop_duplicates deduplicates string column", "[cleaning][dedup]") {
     Column c("s", DType::STRING);
     c.push_back(std::string("apple"));
     c.push_back(std::string("banana"));
-    c.push_back(std::string("apple"));   // duplicate
+    c.push_back(std::string("apple"));  // duplicate
     c.push_back(std::string("cherry"));
     Frame f;
     f.add_column(std::move(c));
@@ -197,9 +197,9 @@ TEST_CASE("drop_duplicates deduplicates mixed-type columns", "[cleaning][dedup]"
     // Two columns: int + string. Row is duplicate only if BOTH columns match.
     Column ci("id", DType::INT64);
     ci.push_back(int64_t(1));
-    ci.push_back(int64_t(1));   // same id …
+    ci.push_back(int64_t(1));  // same id …
     ci.push_back(int64_t(2));
-    ci.push_back(int64_t(1));   // full duplicate of row 0
+    ci.push_back(int64_t(1));  // full duplicate of row 0
 
     Column cs("label", DType::STRING);
     cs.push_back(std::string("a"));
@@ -215,7 +215,8 @@ TEST_CASE("drop_duplicates deduplicates mixed-type columns", "[cleaning][dedup]"
     REQUIRE(result.num_rows() == 3);
 }
 
-TEST_CASE("drop_duplicates type-safety: int 1 and bool true are not duplicates", "[cleaning][dedup]") {
+TEST_CASE("drop_duplicates type-safety: int 1 and bool true are not duplicates",
+          "[cleaning][dedup]") {
     // INT64(1) and BOOL(true) share the same binary value (0x01) but use
     // different hash seeds (^0x01 vs ^0x03) so they must never collide.
     // Each frame below has a genuine intra-type duplicate, verifying that
@@ -258,7 +259,7 @@ TEST_CASE("drop_duplicates column-order sensitivity: (A,B) != (B,A)", "[cleaning
 TEST_CASE("drop_duplicates null rows treated as equal", "[cleaning][dedup]") {
     Column c("x", DType::INT64);
     c.push_null();
-    c.push_null();   // second null — duplicate
+    c.push_null();  // second null — duplicate
     c.push_back(int64_t(5));
     Frame f;
     f.add_column(std::move(c));
