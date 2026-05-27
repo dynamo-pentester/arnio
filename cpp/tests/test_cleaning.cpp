@@ -116,3 +116,134 @@ TEST_CASE("drop_duplicates removes repeated rows", "[cleaning]") {
     Frame result = drop_duplicates(f);
     REQUIRE(result.num_rows() == 2);
 }
+// ── drop_duplicates: hash-path correctness tests ─────────────────────────────
+
+TEST_CASE("drop_duplicates deduplicates int column keep=first", "[cleaning][dedup]") {
+    Column c("x", DType::INT64);
+    c.push_back(int64_t(1));
+    c.push_back(int64_t(2));
+    c.push_back(int64_t(1));   // duplicate of row 0
+    c.push_back(int64_t(3));
+    Frame f;
+    f.add_column(std::move(c));
+
+    Frame result = drop_duplicates(f, std::nullopt, "first");
+    REQUIRE(result.num_rows() == 3);
+    REQUIRE(result.column("x").at(0) == CellValue(int64_t(1)));
+    REQUIRE(result.column("x").at(1) == CellValue(int64_t(2)));
+    REQUIRE(result.column("x").at(2) == CellValue(int64_t(3)));
+}
+
+TEST_CASE("drop_duplicates deduplicates int column keep=last", "[cleaning][dedup]") {
+    Column c("x", DType::INT64);
+    c.push_back(int64_t(1));
+    c.push_back(int64_t(2));
+    c.push_back(int64_t(1));   // duplicate — last occurrence wins
+    Frame f;
+    f.add_column(std::move(c));
+
+    Frame result = drop_duplicates(f, std::nullopt, "last");
+    REQUIRE(result.num_rows() == 2);
+    // Row index 2 (value 1) is the last occurrence; row index 1 (value 2)
+    // is kept. After sort the order is [1, 2].
+    REQUIRE(result.column("x").at(0) == CellValue(int64_t(2)));
+    REQUIRE(result.column("x").at(1) == CellValue(int64_t(1)));
+}
+
+TEST_CASE("drop_duplicates deduplicates int column keep=none", "[cleaning][dedup]") {
+    Column c("x", DType::INT64);
+    c.push_back(int64_t(1));
+    c.push_back(int64_t(2));
+    c.push_back(int64_t(1));   // duplicate — both rows dropped
+    c.push_back(int64_t(3));
+    Frame f;
+    f.add_column(std::move(c));
+
+    Frame result = drop_duplicates(f, std::nullopt, "none");
+    REQUIRE(result.num_rows() == 2);
+    REQUIRE(result.column("x").at(0) == CellValue(int64_t(2)));
+    REQUIRE(result.column("x").at(1) == CellValue(int64_t(3)));
+}
+
+TEST_CASE("drop_duplicates deduplicates float column", "[cleaning][dedup]") {
+    Column c("v", DType::FLOAT64);
+    c.push_back(double(1.5));
+    c.push_back(double(2.5));
+    c.push_back(double(1.5));   // duplicate
+    Frame f;
+    f.add_column(std::move(c));
+
+    Frame result = drop_duplicates(f, std::nullopt, "first");
+    REQUIRE(result.num_rows() == 2);
+    REQUIRE(result.column("v").at(0) == CellValue(double(1.5)));
+    REQUIRE(result.column("v").at(1) == CellValue(double(2.5)));
+}
+
+TEST_CASE("drop_duplicates deduplicates string column", "[cleaning][dedup]") {
+    Column c("s", DType::STRING);
+    c.push_back(std::string("apple"));
+    c.push_back(std::string("banana"));
+    c.push_back(std::string("apple"));   // duplicate
+    c.push_back(std::string("cherry"));
+    Frame f;
+    f.add_column(std::move(c));
+
+    Frame result = drop_duplicates(f, std::nullopt, "first");
+    REQUIRE(result.num_rows() == 3);
+    REQUIRE(result.column("s").at(0) == CellValue(std::string("apple")));
+    REQUIRE(result.column("s").at(1) == CellValue(std::string("banana")));
+    REQUIRE(result.column("s").at(2) == CellValue(std::string("cherry")));
+}
+
+TEST_CASE("drop_duplicates deduplicates mixed-type columns", "[cleaning][dedup]") {
+    // Two columns: int + string. Row is duplicate only if both match.
+    Column ci("id", DType::INT64);
+    ci.push_back(int64_t(1));
+    ci.push_back(int64_t(1));   // same id …
+    ci.push_back(int64_t(2));
+    ci.push_back(int64_t(1));   // full duplicate of row 0
+
+    Column cs("label", DType::STRING);
+    cs.push_back(std::string("a"));
+    cs.push_back(std::string("b"));  // different label → NOT a duplicate
+    cs.push_back(std::string("a"));
+    cs.push_back(std::string("a"));  // matches row 0 exactly → duplicate
+
+    Frame f;
+    f.add_column(std::move(ci));
+    f.add_column(std::move(cs));
+
+    Frame result = drop_duplicates(f, std::nullopt, "first");
+    REQUIRE(result.num_rows() == 3);
+}
+
+TEST_CASE("drop_duplicates type-safety: int 1 != string '1'", "[cleaning][dedup]") {
+    // int column with value 1 and string column with value "1" must NOT collide.
+    Column ci("a", DType::INT64);
+    ci.push_back(int64_t(1));
+    Column cs("b", DType::STRING);
+    cs.push_back(std::string("1"));
+    Frame f1;
+    f1.add_column(std::move(ci));
+
+    Frame f2;
+    f2.add_column(std::move(cs));
+
+    // Single unique row each — no duplicates dropped.
+    REQUIRE(drop_duplicates(f1, std::nullopt, "first").num_rows() == 1);
+    REQUIRE(drop_duplicates(f2, std::nullopt, "first").num_rows() == 1);
+}
+
+TEST_CASE("drop_duplicates null rows treated as equal", "[cleaning][dedup]") {
+    Column c("x", DType::INT64);
+    c.push_null();
+    c.push_null();   // second null — duplicate
+    c.push_back(int64_t(5));
+    Frame f;
+    f.add_column(std::move(c));
+
+    Frame result = drop_duplicates(f, std::nullopt, "first");
+    REQUIRE(result.num_rows() == 2);
+    REQUIRE(result.column("x").is_null(0));
+    REQUIRE(result.column("x").at(1) == CellValue(int64_t(5)));
+}
