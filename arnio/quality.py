@@ -233,6 +233,14 @@ class DataQualityReport:
 
             exclude_columns = set(exclude_columns)
 
+        unknown_exclude_columns = sorted(exclude_columns - set(self.columns))
+        if unknown_exclude_columns:
+            available_columns = ", ".join(self.columns) or "<none>"
+            raise KeyError(
+                "Unknown exclude_columns: "
+                f"{unknown_exclude_columns}. Available columns: {available_columns}"
+            )
+
         def _redact_reason(reason: str | None) -> str | None:
             if not reason or not exclude_columns:
                 return reason
@@ -1113,8 +1121,15 @@ def profile(
         approx_top_values_min_ratio, bool
     ):
         raise TypeError("approx_top_values_min_ratio must be a float")
+
+    if not math.isfinite(approx_top_values_min_ratio):
+        raise ValueError(
+            "approx_top_values_min_ratio must be a finite number between 0 and 1"
+        )
+
     if approx_top_values_min_ratio < 0 or approx_top_values_min_ratio > 1:
         raise ValueError("approx_top_values_min_ratio must be between 0 and 1")
+
     if not isinstance(approx_top_values_sample_size, int) or isinstance(
         approx_top_values_sample_size, bool
     ):
@@ -1322,10 +1337,10 @@ def check_quality_gates(
         "max_row_count_delta_ratio": _validate_gate_threshold(
             max_row_count_delta_ratio, "max_row_count_delta_ratio"
         ),
-        "max_duplicate_ratio_delta": _validate_gate_threshold(
+        "max_duplicate_ratio_delta": _validate_gate_ratio_threshold(
             max_duplicate_ratio_delta, "max_duplicate_ratio_delta"
         ),
-        "max_null_ratio_delta": _validate_gate_threshold(
+        "max_null_ratio_delta": _validate_gate_ratio_threshold(
             max_null_ratio_delta, "max_null_ratio_delta"
         ),
         "max_numeric_mean_delta_ratio": _validate_gate_threshold(
@@ -1523,6 +1538,16 @@ def _validate_gate_threshold(value: float | None, name: str) -> float | None:
     value = float(value)
     if not math.isfinite(value) or value < 0:
         raise ValueError(f"{name} must be a finite non-negative number")
+    return value
+
+
+def _validate_gate_ratio_threshold(value: float | None, name: str) -> float | None:
+    """Validate that a quality gate ratio threshold is between 0.0 and 1.0 inclusive."""
+    if value is None:
+        return None
+    value = _validate_gate_threshold(value, name)
+    if value > 1.0:
+        raise ValueError(f"{name} must be a ratio between 0.0 and 1.0")
     return value
 
 
