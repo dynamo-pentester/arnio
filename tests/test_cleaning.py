@@ -882,6 +882,33 @@ class TestDropConstantColumns:
         ):
             ar.drop_constant_columns([1, 2, 3])
 
+    def test_drop_constant_columns_zero_row_pandas_returns_new_object(self):
+        df = pd.DataFrame({"a": pd.Series(dtype="int64")})
+
+        result = ar.drop_constant_columns(df)
+
+        assert result is not df
+        assert result.shape == (0, 1)
+
+    def test_drop_constant_columns_zero_row_arframe_returns_new_object(self):
+        frame = ar.from_pandas(pd.DataFrame({"a": pd.Series(dtype="int64")}))
+
+        result = ar.drop_constant_columns(frame)
+
+        assert result is not frame
+        assert result.shape == (0, 1)
+
+    def test_drop_constant_columns_zero_row_attrs_not_shared(self):
+        frame = ar.from_pandas(pd.DataFrame({"a": pd.Series(dtype="int64")}))
+
+        frame._attrs = {"nested": {"x": 1}}
+
+        result = ar.drop_constant_columns(frame)
+
+        result._attrs["nested"]["x"] = 2
+
+        assert frame._attrs["nested"]["x"] == 1
+
 
 class TestDropEmptyColumns:
     def test_drop_empty_columns_removes_fully_empty_columns(self, tmp_path):
@@ -2902,7 +2929,9 @@ class TestRoundNumericColumns:
 
         df = pd.DataFrame({"a": [1.123]})
         frame = ar.from_pandas(df)
-        with pytest.raises(TypeError, match="subset must be a list"):
+        with pytest.raises(
+            TypeError, match="subset must be a sequence of column names"
+        ):
             ar.round_numeric_columns(frame, subset="a")
 
     def test_invalid_decimals_type(self):
@@ -2932,6 +2961,41 @@ class TestRoundNumericColumns:
         assert result["a"].tolist() == [1.2, 5.7]
         assert result["label"].tolist() == ["x", "y"]
         assert df["a"].tolist() == [1.234, 5.678]
+
+    def test_round_tuple_subset(self):
+        import pandas as pd
+
+        df = pd.DataFrame({"a": [1.123, 2.456], "b": [3.789, 4.0]})
+
+        frame = ar.from_pandas(df)
+
+        result = ar.round_numeric_columns(
+            frame,
+            subset=("a",),
+            decimals=1,
+        )
+
+        result_df = ar.to_pandas(result)
+
+        assert list(result_df["a"]) == [1.1, 2.5]
+        assert list(result_df["b"]) == [3.789, 4.0]
+
+    def test_round_tuple_subset_non_string_member(self):
+        import pandas as pd
+
+        df = pd.DataFrame({"a": [1.123]})
+
+        frame = ar.from_pandas(df)
+
+        with pytest.raises(
+            TypeError,
+            match="string column names",
+        ):
+            ar.round_numeric_columns(
+                frame,
+                subset=("a", 123),
+                decimals=1,
+            )
 
 
 class TestCombineColumns:
@@ -4019,6 +4083,26 @@ class TestCleanColumnNames:
         frame = from_pandas(df)
         result = ar.clean_column_names(frame)
         assert to_pandas(result).columns.tolist() == ["my_name", "age"]
+
+    def test_clean_column_names_noop_returns_fresh_frame(self):
+        df = pd.DataFrame({"name": [1], "age": [2]})
+        frame = from_pandas(df)
+
+        result = ar.clean_column_names(frame)
+
+        assert result is not frame
+        assert to_pandas(result).equals(to_pandas(frame))
+
+    def test_clean_column_names_noop_attrs_are_isolated(self):
+        df = pd.DataFrame({"name": [1], "age": [2]})
+        frame = from_pandas(df)
+        frame._attrs = {"source": {"name": "original"}}
+
+        result = ar.clean_column_names(frame)
+
+        result._attrs["source"]["name"] = "mutated"
+
+        assert frame._attrs["source"]["name"] == "original"
 
     def test_clean_column_names_consecutive_and_boundary_underscores(self):
         df = pd.DataFrame({"__col__name__": [1], "-another--col-": [2]})

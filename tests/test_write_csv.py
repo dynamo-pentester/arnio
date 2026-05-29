@@ -9,6 +9,19 @@ import pytest
 import arnio as ar
 
 
+@pytest.mark.parametrize(
+    "bad_input",
+    [
+        object(),
+        None,
+        pd.DataFrame({"a": [1, 2]}),
+    ],
+)
+def test_write_csv_invalid_frame(bad_input, tmp_path):
+    with pytest.raises(TypeError, match="frame must be an ArFrame"):
+        ar.write_csv(bad_input, tmp_path / "out.csv")
+
+
 class TestWriteCsv:
     def test_basic_write(self, tmp_path, sample_csv):
         frame = ar.read_csv(sample_csv)
@@ -65,6 +78,18 @@ class TestWriteCsv:
         out = tmp_path / "out.csv"
         ar.write_csv(frame, out)
         assert out.exists()
+
+    def test_non_ascii_output_path_round_trip(self, tmp_path):
+        frame = ar.from_pandas(
+            pd.DataFrame({"city": ["Łódź", "東京"], "sales": [10, 20]})
+        )
+        out = tmp_path / "résumé_東京.csv"
+
+        ar.write_csv(frame, str(out))
+
+        assert out.exists()
+        round_tripped = ar.to_pandas(ar.read_csv(str(out)))
+        pd.testing.assert_frame_equal(round_tripped, ar.to_pandas(frame))
 
     def test_high_precision_float_round_trip(self, tmp_path):
         frame = ar.from_pandas(pd.DataFrame({"val": [1.23456789012345678]}))
