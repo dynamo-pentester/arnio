@@ -64,9 +64,7 @@ class _LinkExtractor(HTMLParser):
         self.links: list[str] = []
         self.ids: set[str] = set()
 
-    def handle_starttag(
-        self, tag: str, attrs: list[tuple[str, str | None]]
-    ) -> None:
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attr = dict(attrs)
         for key in ("href", "src"):
             value = attr.get(key)
@@ -87,7 +85,9 @@ def _parse_html(path: Path) -> tuple[list[str], set[str]]:
     try:
         text = path.read_text(encoding="utf-8")
     except UnicodeDecodeError as exc:
-        raise ValueError(f"UTF-8 decode error at offset {exc.start}: {exc.reason}") from exc
+        raise ValueError(
+            f"UTF-8 decode error at offset {exc.start}: {exc.reason}"
+        ) from exc
 
     extractor = _LinkExtractor()
     extractor.feed(text)
@@ -242,8 +242,7 @@ def main(argv: list[str]) -> int:
         for err in errors:
             print(f"  ✗ {err}", file=sys.stderr)
         print(
-            f"\n{len(errors)} error(s) found. "
-            "Fix the issues above and re-run.",
+            f"\n{len(errors)} error(s) found. " "Fix the issues above and re-run.",
             file=sys.stderr,
         )
         return 1
@@ -257,4 +256,3 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
-
