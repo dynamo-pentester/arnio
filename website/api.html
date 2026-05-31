@@ -98,7 +98,112 @@
     unique=["email"],
 )
 result = schema.validate(frame)</code></pre></div></div>
-        <div class="api-func"><div class="api-func-header">Field builders</div><div class="api-func-body"><p><code>Int64</code>, <code>Float64</code>, <code>String</code>, <code>Bool</code>, <code>Email</code>, <code>URL(allowed_schemes=...)</code>, <code>PhoneNumber</code>, <code>CountryCode</code>, <code>CurrencyCode</code>, <code>LanguageCode</code>, <code>TimeZone</code>, <code>Date</code>, <code>DateTime</code>, <code>Regex</code>, and <code>Custom</code>.</p></div></div>
+        <div class="api-func"><div class="api-func-header">Field builders</div><div class="api-func-body">
+          <p>Each builder returns a <code>Field</code> for use in <code>Schema(fields={...})</code>. All builders accept keyword-only arguments unless noted otherwise.</p>
+          <table class="param-table">
+            <thead>
+              <tr>
+                <th>Builder</th>
+                <th>Group</th>
+                <th>Key parameters</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Int64(...)</code></td>
+                <td>Numeric</td>
+                <td><code>nullable=True</code>, <code>min=None</code>, <code>max=None</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>Integer range bounds are inclusive. <code>min</code> and <code>max</code> must be numeric.</td>
+              </tr>
+              <tr>
+                <td><code>Float64(...)</code></td>
+                <td>Numeric</td>
+                <td><code>nullable=True</code>, <code>min=None</code>, <code>max=None</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>Floating-point range bounds. Same constraints as <code>Int64</code>.</td>
+              </tr>
+              <tr>
+                <td><code>String(...)</code></td>
+                <td>String</td>
+                <td><code>nullable=True</code>, <code>pattern=None</code>, <code>allowed=None</code>, <code>case_sensitive=True</code>, <code>min_length=None</code>, <code>max_length=None</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td><code>pattern</code> is a regex applied to every non-null value. <code>allowed</code> accepts a set, list, or tuple — not a bare string.</td>
+              </tr>
+              <tr>
+                <td><code>Bool(...)</code></td>
+                <td>Boolean</td>
+                <td><code>nullable=True</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>No range or uniqueness constraints; dtype must be boolean.</td>
+              </tr>
+              <tr>
+                <td><code>Email(...)</code></td>
+                <td>Semantic</td>
+                <td><code>nullable=True</code>, <code>unique=False</code>, <code>validation="light"</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td><code>validation</code> is <code>"light"</code> (format check) or <code>"strict"</code> (RFC 5322 conformant).</td>
+              </tr>
+              <tr>
+                <td><code>URL(...)</code></td>
+                <td>Semantic</td>
+                <td><code>nullable=True</code>, <code>unique=False</code>, <code>allowed_schemes=None</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td><code>allowed_schemes</code> restricts to specific schemes (e.g. <code>["https", "http"]</code>). Omit to allow any valid URL scheme.</td>
+              </tr>
+              <tr>
+                <td><code>PhoneNumber(...)</code></td>
+                <td>Semantic</td>
+                <td><code>nullable=True</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>Validates E.164-style phone numbers.</td>
+              </tr>
+              <tr>
+                <td><code>CountryCode(...)</code></td>
+                <td>Semantic</td>
+                <td><code>nullable=True</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>Expects uppercase ISO 3166-1 alpha-2 codes (e.g. <code>"US"</code>, <code>"IN"</code>).</td>
+              </tr>
+              <tr>
+                <td><code>CurrencyCode(...)</code></td>
+                <td>Semantic</td>
+                <td><code>nullable=True</code>, <code>unique=False</code>, <code>allowed=None</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>Validates 3-letter uppercase ISO 4217 codes. <code>allowed</code> narrows to a custom subset of valid codes.</td>
+              </tr>
+              <tr>
+                <td><code>LanguageCode(...)</code></td>
+                <td>Semantic</td>
+                <td><code>nullable=True</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>Expects lowercase ISO 639-1 two-letter codes (e.g. <code>"en"</code>, <code>"fr"</code>).</td>
+              </tr>
+              <tr>
+                <td><code>TimeZone(...)</code></td>
+                <td>Semantic</td>
+                <td><code>nullable=True</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>Validates IANA timezone identifiers (e.g. <code>"America/New_York"</code>).</td>
+              </tr>
+              <tr>
+                <td><code>Date(...)</code></td>
+                <td>Date / Time</td>
+                <td><code>nullable=True</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>Validates ISO 8601 date strings (<code>YYYY-MM-DD</code>).</td>
+              </tr>
+              <tr>
+                <td><code>DateTime(...)</code></td>
+                <td>Date / Time</td>
+                <td><code>nullable=True</code>, <code>min=None</code>, <code>max=None</code>, <code>format=None</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td><code>format</code> is a <code>strptime</code> format string. <code>min</code> / <code>max</code> accept ISO strings or <code>datetime</code> objects.</td>
+              </tr>
+              <tr>
+                <td><code>Regex(pattern, ...)</code></td>
+                <td>Regex</td>
+                <td><code>pattern</code> (positional, required), <code>nullable=True</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>Pattern is compiled at call time — invalid expressions raise <code>re.error</code> immediately, not at validation time.</td>
+              </tr>
+              <tr>
+                <td><code>Custom(name, ...)</code></td>
+                <td>Custom</td>
+                <td><code>name</code> (positional, required), <code>nullable=True</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td><code>name</code> must match a validator registered via <code>register_validator()</code>. Raises <code>ValueError</code> if the name is not found.</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top:1rem"><strong>Common parameters:</strong> <code>nullable</code> — allow null values; <code>unique</code> — require all non-null values to be distinct; <code>severity</code> — <code>"error"</code> (default) or <code>"warning"</code>; <code>required_if</code> — a <code>(column, value)</code> tuple that makes the field mandatory when another column equals a given value.</p>
+        </div></div>
         <div class="api-func"><div class="api-func-header">diff_schema, schema_to_dict, schema_to_yaml, register_validator</div><div class="api-func-body"><p>Compare schema contracts, export schema definitions, and register custom semantic validators. Structured results include <code>SchemaDiff</code>, <code>SchemaDiffEntry</code>, <code>ValidationIssue</code>, and <code>ValidationResult</code>.</p></div></div>
 
         <h2 id="integrations">Integrations</h2>
