@@ -16,11 +16,11 @@
   <meta property="og:url" content="https://arnio.vercel.app/">
   <meta property="og:title" content="Arnio — Production Data Preparation for Python">
   <meta property="og:description" content="Arnio combines a native C++ CSV engine with Python APIs for cleaning, quality profiling, and schema validation.">
-  <meta property="og:image" content="https://arnio.vercel.app/arnio-social-card.svg">
+  <meta property="og:image" content="https://arniolib.vercel.app/arnio-social-card.svg">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Arnio — Production Data Preparation for Python">
   <meta name="twitter:description" content="Arnio combines a native C++ CSV engine with Python APIs for cleaning, quality profiling, and schema validation.">
-  <meta name="twitter:image" content="https://arnio.vercel.app/arnio-social-card.svg">
+  <meta name="twitter:image" content="https://arniolib.vercel.app/arnio-social-card.svg">
 </head>
 <body>
   <a href="#main-content" class="skip-link">Skip to content</a>
@@ -256,8 +256,8 @@ result = schema.validate(frame)</code></pre></div></div>
               <tr>
                 <td><code>Date(...)</code></td>
                 <td>Date / Time</td>
-                <td><code>nullable=True</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
-                <td>Validates ISO 8601 date strings (<code>YYYY-MM-DD</code>).</td>
+                <td><code>nullable=True</code>, <code>min=None</code>, <code>max=None</code>, <code>unique=False</code>, <code>severity="error"</code>, <code>required_if=None</code></td>
+                <td>Validates ISO 8601 date strings (<code>YYYY-MM-DD</code>). <code>min</code> / <code>max</code> accept ISO date strings, <code>datetime.date</code>, or <code>pd.Timestamp</code>; numeric values raise <code>TypeError</code>.</td>
               </tr>
               <tr>
                 <td><code>DateTime(...)</code></td>
